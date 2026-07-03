@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Карточка сотрудника, управление изменениями</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f3fe; padding: 1.25rem; color: #1a1a18; min-height: 100vh; }
+.header { background: #534AB7; color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+.header-role { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 4px; }
+.header-title { font-size: 16px; font-weight: 600; }
+.header-sub { font-size: 12px; opacity: .75; margin-top: 4px; line-height: 1.4; }
+.nav-block { background: white; border-radius: 12px; border: 1px solid #CECBF6; overflow: hidden; margin-bottom: 14px; }
+.round-row { display: flex; border-bottom: 1px solid #CECBF6; }
+.round-btn { flex: 1; padding: 10px 6px; font-size: 11px; font-weight: 600; color: #534AB7; cursor: pointer; background: transparent; border: none; border-right: 1px solid #CECBF6; transition: all .15s; text-align: center; }
+.round-btn:last-child { border-right: none; }
+.round-btn:hover:not(.locked) { background: #EEEDFE; }
+.round-btn.active { background: #534AB7; color: white; }
+.round-btn.locked { color: #bbb; background: #f9f9f9; cursor: default; }
+.rbig { font-size: 13px; font-weight: 700; display: block; margin-bottom: 1px; }
+.rlock { font-size: 15px; display: block; margin-bottom: 1px; }
+.rsub { font-size: 10px; display: block; }
+.zal-row { display: flex; }
+.zal-btn { flex: 1; padding: 10px 8px; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; background: transparent; border: none; border-right: 1px solid #EEEDFE; transition: all .15s; text-align: center; }
+.zal-btn:last-child { border-right: none; }
+.zal-btn:hover { background: #f4f3fe; }
+.zal-btn.active { background: #534AB7; color: white; }
+.round-panel { display: none; }
+.round-panel.visible { display: block; }
+.zal-panel { display: none; }
+.zal-panel.visible { display: block; }
+.card { background: white; border-radius: 12px; border: 1px solid #CECBF6; overflow: hidden; }
+.card-header { background: #534AB7; padding: 12px 16px; }
+.card-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.65); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.card-title { font-size: 15px; font-weight: 700; color: white; line-height: 1.4; }
+.card-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.badge { display: inline-block; background: rgba(255,255,255,.18); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: rgba(255,255,255,.9); font-weight: 500; }
+.card-body { padding: 14px 16px; }
+.section { margin-bottom: 14px; }
+.section:last-child { margin-bottom: 0; }
+.slabel { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.stext { font-size: 13px; color: #333; line-height: 1.7; }
+.ctx-box { background: #FAEEDA; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #EF9F27; }
+.ctx-text { font-size: 13px; color: #633806; line-height: 1.65; }
+.role-box { background: #EEEDFE; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #7F77DD; }
+.role-text { font-size: 13px; color: #3C3489; line-height: 1.65; }
+.lines-box { background: #f5f5f3; border-radius: 8px; padding: 2px 0; }
+.line-step { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-bottom: 1px solid #eee; }
+.line-step:last-child { border-bottom: none; }
+.line-q { font-size: 18px; flex-shrink: 0; line-height: 1; margin-top: 1px; }
+.line-text { font-size: 13px; color: #1a1a18; line-height: 1.5; font-style: italic; }
+.want-box { background: #E1F5EE; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #5DCAA5; }
+.want-text { font-size: 13px; color: #085041; line-height: 1.65; }
+
+
+.lock-wrap { background: white; border-radius: 12px; border: 1px solid #CECBF6; padding: 32px 16px; text-align: center; }
+.lock-ico { font-size: 40px; margin-bottom: 12px; }
+.lock-t { font-size: 15px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
+.lock-s { font-size: 12px; color: #999; margin-bottom: 20px; line-height: 1.6; }
+.lock-inp { width: 100%; max-width: 200px; border: 1.5px solid #f0b0b0; border-radius: 8px; padding: 10px 14px; font-size: 16px; text-align: center; outline: none; font-family: inherit; margin-bottom: 10px; letter-spacing: .08em; }
+.lock-inp:focus { border-color: #534AB7; }
+.lock-btn-el { display: block; margin: 0 auto; padding: 10px 28px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; color: white; cursor: pointer; background: #534AB7; }
+.lock-btn-el:hover { background: #3C3489; }
+.lock-err { font-size: 12px; color: #3C3489; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="header-role">Ролевая игра · Управление изменениями</p>
+  <p class="header-title">🎭 Карточка сотрудника</p>
+  <p class="header-sub">Выбери свой раунд и нажми на свой зал</p>
+</div>
+
+<div class="nav-block">
+  <div class="round-row">
+    <button class="round-btn active" id="rb0" onclick="showRound(0)">
+      <span class="rbig">Р1</span><span class="rsub">Раунд 1</span>
+    </button>
+    <button class="round-btn locked" id="rb1" onclick="tryRound(1)">
+      <span class="rlock">🔒</span><span class="rsub">Раунд 2</span>
+    </button>
+    <button class="round-btn locked" id="rb2" onclick="tryRound(2)">
+      <span class="rlock">🔒</span><span class="rsub">Раунд 3</span>
+    </button>
+  </div>
+  <div id="zalRow">
+    <div class="zal-row">
+      <button class="zal-btn active" onclick="showZal(0,0)">🏠 Зал 1</button>
+      <button class="zal-btn" onclick="showZal(0,1)">🏠 Зал 2</button>
+    </div>
+  </div>
+</div>
+
+<div id="allPanels">
+
+<!-- ============================================================ -->
+<!-- РАУНД 1 -->
+<!-- Зал 1: CRM, Критический скептик, Desire -->
+<!-- Зал 2: Фиксация, Проактивный адаптер, Reinforcement -->
+<!-- ============================================================ -->
+<div class="round-panel visible" id="rp0">
+
+  <!-- Зал 1 -->
+  <div class="zal-panel visible" id="r0z0">
+    <div class="card">
+      <div class="card-header">
+        <p class="card-label">Раунд 1 · Зал 1</p>
+        <p class="card-title">Переход на CRM-систему</p>
+        <div class="card-badges">
+          <span class="badge">Критический скептик</span>
+          <span class="badge">Барьер: Desire</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Ты играешь роль сотрудника. Войди в роль и держи её до конца. Не раскрывай свой тип и барьер, дай руководителю самому тебя «прочитать». Открывайся только если он попадает в точку. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Контекст ситуации</p>
+          <div class="ctx-situation-box"><p class="ctx-situation-text">Ты сидишь на 1-on-1 с руководителем. Он только что попросил тебя остаться после общей встречи чтобы поговорить о переходе на CRM.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Твоя роль</p>
+          <div class="role-box"><p class="role-text">Ты, старший менеджер, работаешь 5 лет. Пережил уже три "революции" с новыми системами, которые потом тихо умирали. Понимаешь, зачем CRM нужна в теории, но лично не хочешь тратить время на переучивание: дедлайны горят, план горит.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Что говоришь</p>
+          <div class="lines-box">
+            <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Мы уже внедряли что-то подобное и в итоге все вернулись к Excel.»</p></div>
+            <div class="line-step"><span class="line-q">💬</span><p class="line-text">«У меня сейчас три горящих сделки, на CRM нет времени.»</p></div>
+            <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Почему не спросили команду, прежде чем решать?»</p></div>
+            <div class="line-step"><span class="line-q">🎭</span><p class="line-text">Соглашаешься формально, но вовлечённости не проявляешь</p></div>
+          </div>
+        </div>
+        <div class="section">
+          <p class="slabel">Чего ждёшь от руководителя</p>
+          <div class="want-box"><p class="want-text">Признания твоего опыта и ответа на вопрос «что лично мне это даст». Если руководитель признаёт прошлый неудачный опыт, чуть открываешься.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Зал 2 -->
+  <div class="zal-panel" id="r0z1">
+    <div class="card">
+      <div class="card-header">
+        <p class="card-label">Раунд 1 · Зал 2</p>
+        <p class="card-title">Фиксация договорённостей в чате</p>
+        <div class="card-badges">
+          <span class="badge">Проактивный адаптер</span>
+          <span class="badge">Барьер: Reinforcement</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Ты играешь роль сотрудника. Войди в роль и держи её до конца. Не раскрывай свой тип и барьер, дай руководителю самому тебя «прочитать». Открывайся только если он попадает в точку. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Контекст ситуации</p>
+          <div class="ctx-situation-box"><p class="ctx-situation-text">Руководитель написал тебе в чат и попросил встретиться. Ты догадываешься что разговор будет про фиксацию договорённостей.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Твоя роль</p>
+          <div class="role-box"><p class="role-text">Ты энергичный, быстро внедряешь новое. Три недели писал в чат все договорённости, но потом начались авральные недели и договорённости возникали на ходу, писать казалось потерей времени. В итоге ты скатился к старой схеме.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Что говоришь</p>
+          <div class="lines-box">
+            <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Да, понимаю что надо, но когда договорились на бегу совсем некогда писать.»</p></div>
+            <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Коллеги же понимают и так, зачем формализм?»</p></div>
+            <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Первые недели делал, потом как-то само забылось.»</p></div>
+            <div class="line-step"><span class="line-q">🎭</span><p class="line-text">Открыт, не защищаешься, но ищешь рациональное объяснение своему откату</p></div>
+          </div>
+        </div>
+        <div class="section">
+          <p class="slabel">Чего ждёшь от руководителя</p>
+          <div class="want-box"><p class="want-text">Конкретного инструмента для ситуации «на бегу», а не лекции. Если дать шаблон для быстрой фиксации договорённостей, сразу соглашаешься попробовать.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- РАУНД 2, код: барсук -->
+<!-- Зал 1: 1-on-1, Аналитик-оценщик, Awareness -->
+<!-- Зал 2: Реорганизация, Критический скептик, Awareness -->
+<!-- ============================================================ -->
+<div class="round-panel" id="rp1">
+  <div class="lock-wrap" id="lock1">
+    <div class="lock-ico">🔒</div>
+    <p class="lock-t">Раунд 2 заблокирован</p>
+    <p class="lock-s">Тренер назовёт кодовое слово.<br>Введи его, чтобы открыть карточку.</p>
+    <input class="lock-inp" id="inp1" type="text" placeholder="кодовое слово..." onkeydown="if(event.key==='Enter')unlock(1)">
+    <button class="lock-btn-el" onclick="unlock(1)">Открыть</button>
+    <p class="lock-err" id="err1">Неверное слово, попробуй ещё раз</p>
+  </div>
+  <div id="cnt1" style="display:none;">
+
+    <!-- Зал 1: 1-on-1, Аналитик, Awareness -->
+    <div class="zal-panel visible" id="r1z0">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 2 · Зал 1</p>
+          <p class="card-title">Обязательные 1-on-1 раз в две недели</p>
+          <div class="card-badges">
+            <span class="badge">Аналитик-оценщик</span>
+            <span class="badge">Барьер: Awareness</span>
+          </div>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Ты играешь роль сотрудника. Войди в роль и держи её до конца. Не раскрывай свой тип и барьер, дай руководителю самому тебя «прочитать». Открывайся только если он попадает в точку. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Контекст ситуации</p>
+          <div class="ctx-situation-box"><p class="ctx-situation-text">Руководитель пригласил тебя на короткую встречу. Ты знаешь что в компании вводят новый формат встреч один на один.</p></div>
+        </div>
+          <div class="section">
+            <p class="slabel">Твоя роль</p>
+            <div class="role-box"><p class="role-text">Ты не против 1-on-1 как идеи, но искренне не понимаешь зачем это нужно именно тебе. Ты общаешься с руководителем каждый день. Кажется, что это формализм ради галочки. Ты не сопротивляешься, но и не горишь.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что говоришь</p>
+            <div class="lines-box">
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«У нас и так много встреч. Зачем добавлять ещё одну?»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Мы же общаемся каждый день, в чём разница?»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Это нужно компании или реально поможет мне в работе?»</p></div>
+              <div class="line-step"><span class="line-q">🎭</span><p class="line-text">Задаёшь уточняющие вопросы, анализируешь, пытаешься понять логику</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Чего ждёшь от руководителя</p>
+            <div class="want-box"><p class="want-text">Конкретных фактов и примеров, не абстрактных слов о развитии. Если руководитель покажет реальную проблему, которую решает 1-on-1, начнёшь воспринимать серьёзно.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Зал 2: Реорганизация, Критический скептик, Awareness -->
+    <div class="zal-panel" id="r1z1">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 2 · Зал 2</p>
+          <p class="card-title">Реорганизация: объединение с соседним отделом</p>
+          <div class="card-badges">
+            <span class="badge">Критический скептик</span>
+            <span class="badge">Барьер: Awareness</span>
+          </div>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Ты играешь роль сотрудника. Войди в роль и держи её до конца. Не раскрывай свой тип и барьер, дай руководителю самому тебя «прочитать». Открывайся только если он попадает в точку. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Контекст ситуации</p>
+          <div class="ctx-situation-box"><p class="ctx-situation-text">Руководитель попросил встретиться после того как было объявлено об объединении отделов. Ты ещё не знаешь что именно он скажет.</p></div>
+        </div>
+          <div class="section">
+            <p class="slabel">Твоя роль</p>
+            <div class="role-box"><p class="role-text">Ты опытный сотрудник, 6 лет в компании. Слышал уже несколько реорганизаций, которые «улучшат всё». Не понимаешь, зачем это объединение нужно, видишь только риски и потенциальный хаос. Открыто скептичен.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что говоришь</p>
+            <div class="lines-box">
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Опять перестройка. В прошлый раз всё сделали криво.»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Зачем объединяться? Мы и так работали нормально.»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Скажи честно, будут сокращения?»</p></div>
+              <div class="line-step"><span class="line-q">🎭</span><p class="line-text">Скрещиваешь руки, смотришь скептически, задаёшь острые вопросы</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Чего ждёшь от руководителя</p>
+            <div class="want-box"><p class="want-text">Честного ответа, не уклончивого. Если руководитель признаёт прошлый неудачный опыт и говорит что конкретно делает сейчас, начинаешь доверять.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- РАУНД 3, код: апельсин -->
+<!-- Зал 1: Тикеты, Ожидающий наблюдатель, Knowledge -->
+<!-- Зал 2: Отчёты, Проактивный адаптер, Knowledge -->
+<!-- ============================================================ -->
+<div class="round-panel" id="rp2">
+  <div class="lock-wrap" id="lock2">
+    <div class="lock-ico">🔒</div>
+    <p class="lock-t">Раунд 3 заблокирован</p>
+    <p class="lock-s">Тренер назовёт кодовое слово.<br>Введи его, чтобы открыть карточку.</p>
+    <input class="lock-inp" id="inp2" type="text" placeholder="кодовое слово..." onkeydown="if(event.key==='Enter')unlock(2)">
+    <button class="lock-btn-el" onclick="unlock(2)">Открыть</button>
+    <p class="lock-err" id="err2">Неверное слово, попробуй ещё раз</p>
+  </div>
+  <div id="cnt2" style="display:none;">
+
+    <!-- Зал 1: Тикеты, Ожидающий наблюдатель, Knowledge -->
+    <div class="zal-panel visible" id="r2z0">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 3 · Зал 1</p>
+          <p class="card-title">Новый стандарт обработки клиентских обращений</p>
+          <div class="card-badges">
+            <span class="badge">Ожидающий наблюдатель</span>
+            <span class="badge">Барьер: Knowledge</span>
+          </div>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Ты играешь роль сотрудника. Войди в роль и держи её до конца. Не раскрывай свой тип и барьер, дай руководителю самому тебя «прочитать». Открывайся только если он попадает в точку. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Контекст ситуации</p>
+          <div class="ctx-situation-box"><p class="ctx-situation-text">Руководитель позвал тебя на короткий разговор. Ты понимаешь что это, скорее всего, про заполнение тикетов.</p></div>
+        </div>
+          <div class="section">
+            <p class="slabel">Твоя роль</p>
+            <div class="role-box"><p class="role-text">Ты хочешь сделать всё правильно и понимаешь зачем это нужно, но честно не знаешь как выбрать правильную категорию. Список из 40 пунктов непонятен, половина категорий звучат похоже. Боишься выбрать что-то не то и потом объяснять, почему это сделал, поэтому проще нажать «закрыть» без заполнения.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что говоришь</p>
+            <div class="lines-box">
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Я не понимаю какую категорию выбрать.»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Там 40 категорий, они все звучат похоже, я путаюсь.»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«А если выберу не ту, то потом придётся переделывать?»</p></div>
+              <div class="line-step"><span class="line-q">🎭</span><p class="line-text">Открыт, не сопротивляешься, но растерян и нуждаешься в конкретной инструкции</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Чего ждёшь от руководителя</p>
+            <div class="want-box"><p class="want-text">Конкретного примера на реальном тикете и простой памятки. Если руководитель покажет два-три типичных кейса с нужными категориями, сразу включаешься.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Зал 2: Отчёты, Проактивный адаптер, Knowledge -->
+    <div class="zal-panel" id="r2z1">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 3 · Зал 2</p>
+          <p class="card-title">Новый формат еженедельных отчётов</p>
+          <div class="card-badges">
+            <span class="badge">Проактивный адаптер</span>
+            <span class="badge">Барьер: Knowledge</span>
+          </div>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Ты играешь роль сотрудника. Войди в роль и держи её до конца. Не раскрывай свой тип и барьер, дай руководителю самому тебя «прочитать». Открывайся только если он попадает в точку. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Контекст ситуации</p>
+          <div class="ctx-situation-box"><p class="ctx-situation-text">Руководитель попросил остаться после стендапа. Ты сдавал отчёты как обычно и не ожидал этого разговора.</p></div>
+        </div>
+          <div class="section">
+            <p class="slabel">Твоя роль</p>
+            <div class="role-box"><p class="role-text">Ты активный, быстро включаешься в новое, сразу начал заполнять новую форму и хотел сделать всё хорошо, но честно: не очень понимаешь что такое «риск» в рабочем контексте, поэтому пишешь туда всё подряд: задачи, зависимости, вопросы. Однако честно думаешь, что делаешь правильно.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что говоришь</p>
+            <div class="lines-box">
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Я заполняю все три раздела, как и было сказано.»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Что не так с разделом «риски»? Я же пишу что там происходит.»</p></div>
+              <div class="line-step"><span class="line-q">💬</span><p class="line-text">«Можешь показать как правильно? Я просто не до конца понял.»</p></div>
+              <div class="line-step"><span class="line-q">🎭</span><p class="line-text">Открыт, не защищаешься, искренне хочешь разобраться</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Чего ждёшь от руководителя</p>
+            <div class="want-box"><p class="want-text">Чёткого определения + конкретного примера из своей работы. Если показать разницу между риском и задачей на реальном кейсе, сразу всё понимаешь и исправляешь.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /allPanels -->
+
+<script>
+var PW = { 1: 'барсук', 2: 'апельсин' };
+var unlocked = [true, false, false];
+
+function rebuildZalRow(ri) {
+  document.getElementById('zalRow').innerHTML =
+    '<div class="zal-row">' +
+    '<button class="zal-btn active" onclick="showZal(' + ri + ',0)">🏠 Зал 1</button>' +
+    '<button class="zal-btn" onclick="showZal(' + ri + ',1)">🏠 Зал 2</button>' +
+    '</div>';
+}
+
+function showRound(ri) {
+  if (!unlocked[ri]) return;
+  document.querySelectorAll('.round-panel').forEach(function(p, i) {
+    p.classList.toggle('visible', i === ri);
+  });
+  document.querySelectorAll('.round-btn').forEach(function(b, i) {
+    b.classList.remove('active');
+    if (i === ri) b.classList.add('active');
+  });
+  rebuildZalRow(ri);
+  var rp = document.getElementById('rp' + ri);
+  rp.querySelectorAll('.zal-panel').forEach(function(p, i) {
+    p.classList.toggle('visible', i === 0);
+  });
+}
+
+function tryRound(ri) {
+  if (unlocked[ri]) {
+    showRound(ri);
+  } else {
+    document.querySelectorAll('.round-panel').forEach(function(p, i) {
+      p.classList.toggle('visible', i === ri);
+    });
+    document.querySelectorAll('.round-btn').forEach(function(b, i) {
+      b.classList.remove('active');
+      if (i === ri) b.classList.add('active');
+    });
+    document.getElementById('zalRow').innerHTML = '';
+    var inp = document.getElementById('inp' + ri);
+    if (inp) setTimeout(function() { inp.focus(); }, 100);
+  }
+}
+
+function showZal(ri, zi) {
+  var rp = document.getElementById('rp' + ri);
+  rp.querySelectorAll('.zal-panel').forEach(function(p, i) {
+    p.classList.toggle('visible', i === zi);
+  });
+  document.querySelectorAll('.zal-btn').forEach(function(b, i) {
+    b.classList.remove('active');
+    if (i === zi) b.classList.add('active');
+  });
+}
+
+function unlock(ri) {
+  var v = document.getElementById('inp' + ri).value.trim().toLowerCase();
+  if (v === PW[ri]) {
+    unlocked[ri] = true;
+    document.getElementById('lock' + ri).style.display = 'none';
+    document.getElementById('cnt' + ri).style.display = 'block';
+    var rb = document.getElementById('rb' + ri);
+    rb.classList.remove('locked');
+    rb.innerHTML = '<span class="rbig">Р' + (ri + 1) + '</span><span class="rsub">Раунд ' + (ri + 1) + '</span>';
+    showRound(ri);
+  } else {
+    var err = document.getElementById('err' + ri);
+    err.style.display = 'block';
+    setTimeout(function() { err.style.display = 'none'; }, 2500);
+  }
+}
+</script>
+</body>
+</html>

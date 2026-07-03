@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Карточка руководителя — управление изменениями</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4fb; padding: 1.25rem; color: #1a1a18; min-height: 100vh; }
+.header { background: #042C53; color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+.header-role { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 4px; }
+.header-title { font-size: 16px; font-weight: 600; }
+.header-sub { font-size: 12px; opacity: .75; margin-top: 4px; line-height: 1.4; }
+.nav-block { background: white; border-radius: 12px; border: 1px solid #c5d8f0; overflow: hidden; margin-bottom: 14px; }
+.round-row { display: flex; border-bottom: 1px solid #c5d8f0; }
+.round-btn { flex: 1; padding: 10px 6px; font-size: 11px; font-weight: 600; color: #042C53; cursor: pointer; background: transparent; border: none; border-right: 1px solid #c5d8f0; transition: all .15s; text-align: center; }
+.round-btn:last-child { border-right: none; }
+.round-btn:hover:not(.locked) { background: #ddeeff; }
+.round-btn.active { background: #042C53; color: white; }
+.round-btn.locked { color: #bbb; background: #f9f9f9; cursor: default; }
+.rbig { font-size: 13px; font-weight: 700; display: block; margin-bottom: 1px; }
+.rlock { font-size: 15px; display: block; margin-bottom: 1px; }
+.rsub { font-size: 10px; display: block; }
+.zal-row { display: flex; }
+.zal-btn { flex: 1; padding: 10px 8px; font-size: 12px; font-weight: 600; color: #555; cursor: pointer; background: transparent; border: none; border-right: 1px solid #eef3fa; transition: all .15s; text-align: center; }
+.zal-btn:last-child { border-right: none; }
+.zal-btn:hover { background: #f0f4fb; }
+.zal-btn.active { background: #042C53; color: white; }
+.round-panel { display: none; }
+.round-panel.visible { display: block; }
+.zal-panel { display: none; }
+.zal-panel.visible { display: block; }
+.card { background: white; border-radius: 12px; border: 1px solid #c5d8f0; overflow: hidden; }
+.card-header { background: #042C53; padding: 12px 16px; }
+.card-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.65); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.card-title { font-size: 15px; font-weight: 700; color: white; line-height: 1.4; }
+.card-body { padding: 14px 16px; }
+.section { margin-bottom: 14px; }
+.section:last-child { margin-bottom: 0; }
+.slabel { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.stext { font-size: 13px; color: #333; line-height: 1.7; }
+.fact-box { background: #FAEEDA; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #EF9F27; }
+.fact-text { font-size: 13px; color: #633806; line-height: 1.65; }
+.stays-box { background: #EAF3DE; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #5DCAA5; }
+.stays-text { font-size: 13px; color: #27500A; line-height: 1.65; }
+.action-box { background: #E6F1FB; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #185FA5; }
+.action-text { font-size: 13px; color: #042C53; line-height: 1.65; }
+.rules-box { background: #f5f5f3; border-radius: 8px; padding: 2px 0; }
+.rule-step { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-bottom: 1px solid #eee; }
+.rule-step:last-child { border-bottom: none; }
+.rule-c { width: 22px; height: 22px; border-radius: 50%; background: #042C53; color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.rule-text { font-size: 13px; color: #1a1a18; line-height: 1.5; }
+.success-box { background: #EEEDFE; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #7F77DD; }
+.success-item { font-size: 13px; color: #3C3489; line-height: 1.75; padding-left: 2px; }
+.success-item::before { content: "✓  "; font-weight: 700; }
+.lock-wrap { background: white; border-radius: 12px; border: 1px solid #c5d8f0; padding: 32px 16px; text-align: center; }
+.lock-ico { font-size: 40px; margin-bottom: 12px; }
+.lock-t { font-size: 15px; font-weight: 700; color: #1a1a18; margin-bottom: 6px; }
+.lock-s { font-size: 12px; color: #999; margin-bottom: 20px; line-height: 1.6; }
+.lock-inp { width: 100%; max-width: 200px; border: 1.5px solid #c5d8f0; border-radius: 8px; padding: 10px 14px; font-size: 16px; text-align: center; outline: none; font-family: inherit; margin-bottom: 10px; letter-spacing: .08em; }
+.lock-inp:focus { border-color: #042C53; }
+.lock-btn-el { display: block; margin: 0 auto; padding: 10px 28px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; color: white; cursor: pointer; background: #042C53; }
+.lock-btn-el:hover { background: #0C447C; }
+.lock-err { font-size: 12px; color: #c0392b; margin-top: 10px; display: none; }
+.task-box { background: #042C53; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.task-text { font-size: 13px; color: #E6F1FB; line-height: 1.65; }
+.phrase-box { background: #E1F5EE; border-radius: 8px; padding: 10px 12px; border-left: 3px solid #1D9E75; }
+.phrase-text { font-size: 13px; color: #085041; line-height: 1.65; font-style: italic; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="header-role">Ролевая игра · Управление изменениями</p>
+  <p class="header-title">👔 Карточка руководителя</p>
+  <p class="header-sub">Выбери свой раунд и нажми на свой зал</p>
+</div>
+
+<div class="nav-block">
+  <div class="round-row">
+    <button class="round-btn active" id="rb0" onclick="showRound(0)">
+      <span class="rbig">Р1</span><span class="rsub">Раунд 1</span>
+    </button>
+    <button class="round-btn locked" id="rb1" onclick="tryRound(1)">
+      <span class="rlock">🔒</span><span class="rsub">Раунд 2</span>
+    </button>
+    <button class="round-btn locked" id="rb2" onclick="tryRound(2)">
+      <span class="rlock">🔒</span><span class="rsub">Раунд 3</span>
+    </button>
+  </div>
+  <div id="zalRow">
+    <div class="zal-row">
+      <button class="zal-btn active" onclick="showZal(0,0)">🏠 Зал 1</button>
+      <button class="zal-btn" onclick="showZal(0,1)">🏠 Зал 2</button>
+    </div>
+  </div>
+</div>
+
+<div id="allPanels">
+
+<!-- ============================================================ -->
+<!-- РАУНД 1 -->
+<!-- ============================================================ -->
+<div class="round-panel visible" id="rp0">
+
+  <!-- Зал 1: CRM -->
+  <div class="zal-panel visible" id="r0z0">
+    <div class="card">
+      <div class="card-header">
+        <p class="card-label">Раунд 1 · Зал 1</p>
+        <p class="card-title">Переход на CRM-систему</p>
+      </div>
+      <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Проведи 1-on-1 разговор с сотрудником об изменении. Используй формулу ЗПДО, определи тип сотрудника и его барьер по ADKAR. Слушай 70% времени, говори 30%. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Можешь начать разговор с фразы</p>
+          <div class="phrase-box"><p class="phrase-text">«[Имя], хочу поговорить о переходе на CRM. Прежде чем рассказать детали, хочу сначала услышать тебя. Как ты вообще к этому относишься?»</p></div>
+        </div>
+
+        <div class="section">
+          <p class="slabel">Контекст изменения</p>
+          <p class="stext">Компания переходит на новую CRM-систему. Все контакты, сделки и задачи по клиентам переносятся из Excel и почты в единую платформу. Старт обязателен через 10 дней. Ты проводишь встречу 1-on-1 с менеджером по продажам.</p>
+        </div>
+        <div class="section">
+          <p class="slabel">Факты</p>
+          <div class="fact-box"><p class="fact-text">За прошлый квартал потеряли 4 клиентов: менеджеры не перезвонили вовремя, задачи терялись в блокнотах. CRM даёт автонапоминания и общую историю по клиенту.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Что не изменится</p>
+          <div class="stays-box"><p class="stays-text">Состав команды, цели на квартал, клиенты. Меняется только инструмент.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Действия и апдейт для команды</p>
+          <div class="action-box"><p class="action-text">На этой неделе необходимо получить все доступы к системе + пройти 2-часовое обучение в четверг. Первый отчёт в новой системе нужен уже через 10 дней. Апдейт возможен в пятницу на общей встрече департамента.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Правила роли руководителя</p>
+          <div class="rules-box">
+            <div class="rule-step"><div class="rule-c">1</div><p class="rule-text">Строй разговор по ЗПДО: зачем, что меняется и почему, следующий шаг, ответы на вопросы и дата апдейта</p></div>
+            <div class="rule-step"><div class="rule-c">2</div><p class="rule-text">Слушай реакцию: определи тип и барьер ADKAR</p></div>
+            <div class="rule-step"><div class="rule-c">3</div><p class="rule-text">Покажи личную выгоду для сотрудника</p></div>
+            <div class="rule-step"><div class="rule-c">4</div><p class="rule-text">Удерживай спокойный тон</p></div>
+            <div class="rule-step"><div class="rule-c">5</div><p class="rule-text">Слушай 70% времени, говори 30%</p></div>
+            <div class="rule-step"><div class="rule-c">6</div><p class="rule-text">Задавай открытые вопросы (Что? Как? Почему?)</p></div>
+          </div>
+        </div>
+        <div class="section">
+          <p class="slabel">Критерий успеха</p>
+          <div class="success-box">
+            <p class="success-item">Сотрудник почувствовал, что его услышали</p>
+            <p class="success-item">Барьер ADKAR диагностирован точно</p>
+            <p class="success-item">Разговор построен по ЗПДО</p>
+            <p class="success-item">Сотрудник согласился на следующий шаг</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Зал 2: Фиксация договорённостей -->
+  <div class="zal-panel" id="r0z1">
+    <div class="card">
+      <div class="card-header">
+        <p class="card-label">Раунд 1 · Зал 2</p>
+        <p class="card-title">Фиксация договорённостей в чате</p>
+      </div>
+      <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Проведи 1-on-1 разговор с сотрудником об изменении. Используй формулу ЗПДО, определи тип сотрудника и его барьер по ADKAR. Слушай 70% времени, говори 30%. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Можешь начать разговор с фразы</p>
+          <div class="phrase-box"><p class="phrase-text">«[Имя], я заметил что последние две недели договорённости снова идут устно, без фиксации в чате. Хочу разобраться что происходит, не с претензией, а честно.»</p></div>
+        </div>
+
+        <div class="section">
+          <p class="slabel">Контекст изменения</p>
+          <p class="stext">Команда уже месяц работает по новому стандарту фиксации договорённостей в чате. Сотрудник три недели соблюдал стандарт идеально, но последние две недели перестал: договаривается устно и не пишет в чат. Ты разговариваешь с ним на 1-on-1.</p>
+        </div>
+        <div class="section">
+          <p class="slabel">Факты</p>
+          <div class="fact-box"><p class="fact-text">За полгода до внедрения несколько договоренностей «потерялись», каждый вспоминал по-своему, были конфликты и срывы. Письменная фиксация — это защита для всех.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Что не изменится</p>
+          <div class="stays-box"><p class="stays-text">Стиль общения, доверие в команде, меняется только одно действие: фиксация всех договоренностей в письменном виде.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Действия и апдейт для команды</p>
+          <div class="action-box"><p class="action-text">Дай шаблон для срочных ситуаций. С этой недели договорённости без фиксации не действуют. Апдейт через неделю на общей встрече с командой.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Правила роли руководителя</p>
+          <div class="rules-box">
+            <div class="rule-step"><div class="rule-c">1</div><p class="rule-text">Строй разговор по ЗПДО: зачем, что меняется и почему, следующий шаг, ответы на вопросы и дата апдейта</p></div>
+            <div class="rule-step"><div class="rule-c">2</div><p class="rule-text">Слушай реакцию: определи тип и барьер ADKAR</p></div>
+            <div class="rule-step"><div class="rule-c">3</div><p class="rule-text">Покажи личную выгоду для сотрудника</p></div>
+            <div class="rule-step"><div class="rule-c">4</div><p class="rule-text">Удерживай спокойный тон</p></div>
+            <div class="rule-step"><div class="rule-c">5</div><p class="rule-text">Слушай 70% времени, говори 30%</p></div>
+            <div class="rule-step"><div class="rule-c">6</div><p class="rule-text">Задавай открытые вопросы (Что? Как? Почему?)</p></div>
+          </div>
+        </div>
+        <div class="section">
+          <p class="slabel">Критерий успеха</p>
+          <div class="success-box">
+            <p class="success-item">Сотрудник почувствовал, что его услышали</p>
+            <p class="success-item">Барьер ADKAR диагностирован точно</p>
+            <p class="success-item">Разговор построен по ЗПДО</p>
+            <p class="success-item">Сотрудник согласился на следующий шаг</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- РАУНД 2 — код: барсук -->
+<!-- ============================================================ -->
+<div class="round-panel" id="rp1">
+  <div class="lock-wrap" id="lock1">
+    <div class="lock-ico">🔒</div>
+    <p class="lock-t">Раунд 2 заблокирован</p>
+    <p class="lock-s">Тренер назовёт кодовое слово.<br>Введи его, чтобы открыть карточку.</p>
+    <input class="lock-inp" id="inp1" type="text" placeholder="кодовое слово..." onkeydown="if(event.key==='Enter')unlock(1)">
+    <button class="lock-btn-el" onclick="unlock(1)">Открыть</button>
+    <p class="lock-err" id="err1">Неверное слово — попробуй ещё раз</p>
+  </div>
+  <div id="cnt1" style="display:none;">
+
+    <!-- Зал 1: 1-on-1 -->
+    <div class="zal-panel visible" id="r1z0">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 2 · Зал 1</p>
+          <p class="card-title">Обязательные 1-on-1 раз в две недели</p>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Проведи 1-on-1 разговор с сотрудником об изменении. Используй формулу ЗПДО, определи тип сотрудника и его барьер по ADKAR. Слушай 70% времени, говори 30%. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Можешь начать разговор с фразы</p>
+          <div class="phrase-box"><p class="phrase-text">«[Имя], хочу поговорить о новом формате встреч один на один. Что ты уже слышал об этом, и как к этому относишься?»</p></div>
+        </div>
+
+          <div class="section">
+            <p class="slabel">Контекст изменения</p>
+            <p class="stext">Компания вводит обязательные 1-on-1 раз в две недели: руководитель проводит 15–20 минут с каждым сотрудником и фиксирует встречи в системе. Раньше таких встреч не было, встречались только «по необходимости».</p>
+          </div>
+          <div class="section">
+            <p class="slabel">Факты</p>
+            <div class="fact-box"><p class="fact-text">В прошлом квартале ушли двое сотрудников из Компании, на exit-интервью оба сказали: не понимали, куда растут, боялись отвлечь руководителя. Компания вводит 1-on-1 для минимизации потерь сотрудников и их роста в Компании.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что не изменится</p>
+            <div class="stays-box"><p class="stays-text">Рабочие процессы, нагрузка, состав команды, добавляется только 30 минут встречи 1on1 раз в две недели.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Действия и апдейт</p>
+            <div class="action-box"><p class="action-text">Первую встречу нужно провести в пятницу, ты пришлешь шаблон с вопросами сотруднику для его первой самооценки.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Правила роли руководителя</p>
+            <div class="rules-box">
+              <div class="rule-step"><div class="rule-c">1</div><p class="rule-text">Строй разговор по ЗПДО: зачем, что меняется и почему, следующий шаг, ответы на вопросы и дата апдейта</p></div>
+              <div class="rule-step"><div class="rule-c">2</div><p class="rule-text">Слушай реакцию: определи тип и барьер ADKAR</p></div>
+              <div class="rule-step"><div class="rule-c">3</div><p class="rule-text">Покажи личную выгоду для сотрудника</p></div>
+              <div class="rule-step"><div class="rule-c">4</div><p class="rule-text">Удерживай спокойный тон</p></div>
+              <div class="rule-step"><div class="rule-c">5</div><p class="rule-text">Слушай 70% времени, говори 30%</p></div>
+              <div class="rule-step"><div class="rule-c">6</div><p class="rule-text">Задавай открытые вопросы (Что? Как? Почему?)</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Критерий успеха</p>
+            <div class="success-box">
+              <p class="success-item">Сотрудник почувствовал, что его услышали</p>
+              <p class="success-item">Барьер ADKAR диагностирован точно</p>
+              <p class="success-item">Разговор построен по ЗПДО</p>
+              <p class="success-item">Сотрудник согласился на следующий шаг</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Зал 2: Реорганизация -->
+    <div class="zal-panel" id="r1z1">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 2 · Зал 2</p>
+          <p class="card-title">Реорганизация: объединение с соседним отделом</p>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Проведи 1-on-1 разговор с сотрудником об изменении. Используй формулу ЗПДО, определи тип сотрудника и его барьер по ADKAR. Слушай 70% времени, говори 30%. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Можешь начать разговор с фразы</p>
+          <div class="phrase-box"><p class="phrase-text">«[Имя], я знаю что новость об объединении отделов непростая. Хочу поговорить честно, что ты сейчас думаешь об этом?»</p></div>
+        </div>
+
+          <div class="section">
+            <p class="slabel">Контекст изменения</p>
+            <p class="stext">Объявлена реорганизация: твоя команда объединяется с соседним отделом. Финальная структура будет готова через 3 недели, часть ролей точно изменится. В прошлом году уже происходили подобные изменения и твоя команда устала от предыдущих изменений. Ты проводишь 1-on-1 с тревожным сотрудником.</p>
+          </div>
+          <div class="section">
+            <p class="slabel">Факты</p>
+            <div class="fact-box"><p class="fact-text">Объединение убирает дублирование: два отдела делали одно и то же, теряли скорость. Новая структура даст больший охват и карьерные возможности.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что не изменится</p>
+            <div class="stays-box"><p class="stays-text">Состав твоей группы, текущие проекты. Ближайшие дедлайны по проектам нужно закрывать.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Действия и апдейт для команды</p>
+            <div class="action-box"><p class="action-text">На этой неделе все в обычном режиме. Тебе нужно собрать вопросы от команды для руководства. Апдейт по структуре будет в пятницу после встречи с директором.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Правила роли руководителя</p>
+            <div class="rules-box">
+              <div class="rule-step"><div class="rule-c">1</div><p class="rule-text">Строй разговор по ЗПДО: зачем, что меняется и почему, следующий шаг, ответы на вопросы и дата апдейта</p></div>
+              <div class="rule-step"><div class="rule-c">2</div><p class="rule-text">Слушай реакцию: определи тип и барьер ADKAR</p></div>
+              <div class="rule-step"><div class="rule-c">3</div><p class="rule-text">Покажи личную выгоду для сотрудника</p></div>
+              <div class="rule-step"><div class="rule-c">4</div><p class="rule-text">Удерживай спокойный тон</p></div>
+              <div class="rule-step"><div class="rule-c">5</div><p class="rule-text">Слушай 70% времени, говори 30%</p></div>
+              <div class="rule-step"><div class="rule-c">6</div><p class="rule-text">Задавай открытые вопросы (Что? Как? Почему?)</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Критерий успеха</p>
+            <div class="success-box">
+              <p class="success-item">Сотрудник почувствовал, что его услышали</p>
+              <p class="success-item">Барьер ADKAR диагностирован точно</p>
+              <p class="success-item">Разговор построен по ЗПДО</p>
+              <p class="success-item">Сотрудник согласился на следующий шаг</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- РАУНД 3 — код: апельсин -->
+<!-- ============================================================ -->
+<div class="round-panel" id="rp2">
+  <div class="lock-wrap" id="lock2">
+    <div class="lock-ico">🔒</div>
+    <p class="lock-t">Раунд 3 заблокирован</p>
+    <p class="lock-s">Тренер назовёт кодовое слово.<br>Введи его, чтобы открыть карточку.</p>
+    <input class="lock-inp" id="inp2" type="text" placeholder="кодовое слово..." onkeydown="if(event.key==='Enter')unlock(2)">
+    <button class="lock-btn-el" onclick="unlock(2)">Открыть</button>
+    <p class="lock-err" id="err2">Неверное слово — попробуй ещё раз</p>
+  </div>
+  <div id="cnt2" style="display:none;">
+
+    <!-- Зал 1: Стандарт тикетов -->
+    <div class="zal-panel visible" id="r2z0">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 3 · Зал 1</p>
+          <p class="card-title">Новый стандарт обработки клиентских обращений</p>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Проведи 1-on-1 разговор с сотрудником об изменении. Используй формулу ЗПДО, определи тип сотрудника и его барьер по ADKAR. Слушай 70% времени, говори 30%. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Можешь начать разговор с фразы</p>
+          <div class="phrase-box"><p class="phrase-text">«[Имя], хочу обсудить заполнение тикетов, замечаю что поля часто остаются пустыми. Расскажи, что происходит, в чём сложность?»</p></div>
+        </div>
+
+          <div class="section">
+            <p class="slabel">Контекст изменения</p>
+            <p class="stext">Компания внедряет новый стандарт обработки клиентских обращений: каждый тикет обязательно закрывается с заполненным полем «причина обращения» и выбором категории из списка. Прошло две недели после объявления, но половина тикетов закрывается пустыми. Ты разговариваешь с сотрудником службы поддержки.</p>
+          </div>
+          <div class="section">
+            <p class="slabel">Факты</p>
+            <div class="fact-box"><p class="fact-text">Эти данные идут в ежемесячный отчёт руководству и используются для приоритизации доработок продукта. Если поля пустые, кажется, что решения принимаются вслепую. Ваша работа напрямую влияет на то, что улучшится в продукте.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что не изменится</p>
+            <div class="stays-box"><p class="stays-text">Количество тикетов, нагрузка, дедлайны, состав команды, добавляется только два поля при закрытии тикета.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Действия и апдейт для команды</p>
+            <div class="action-box"><p class="action-text">Покажи прямо сейчас как выглядит правильно заполненный тикет. Дай памятку с категориями (один листок). Апдейт — через неделю, смотрим статистику заполнения.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Правила роли руководителя</p>
+            <div class="rules-box">
+              <div class="rule-step"><div class="rule-c">1</div><p class="rule-text">Строй разговор по ЗПДО: зачем, что меняется и почему, следующий шаг, ответы на вопросы и дата апдейта</p></div>
+              <div class="rule-step"><div class="rule-c">2</div><p class="rule-text">Слушай реакцию: определи тип и барьер ADKAR</p></div>
+              <div class="rule-step"><div class="rule-c">3</div><p class="rule-text">Покажи личную выгоду для сотрудника</p></div>
+              <div class="rule-step"><div class="rule-c">4</div><p class="rule-text">Удерживай спокойный тон</p></div>
+              <div class="rule-step"><div class="rule-c">5</div><p class="rule-text">Слушай 70% времени, говори 30%</p></div>
+              <div class="rule-step"><div class="rule-c">6</div><p class="rule-text">Задавай открытые вопросы (Что? Как? Почему?)</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Критерий успеха</p>
+            <div class="success-box">
+              <p class="success-item">Сотрудник почувствовал, что его услышали</p>
+              <p class="success-item">Барьер ADKAR диагностирован точно</p>
+              <p class="success-item">Разговор построен по ЗПДО</p>
+              <p class="success-item">Сотрудник согласился на следующий шаг</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Зал 2: Формат отчётов -->
+    <div class="zal-panel" id="r2z1">
+      <div class="card">
+        <div class="card-header">
+          <p class="card-label">Раунд 3 · Зал 2</p>
+          <p class="card-title">Новый формат еженедельных отчётов</p>
+        </div>
+        <div class="card-body">
+        <div class="section">
+          <p class="slabel">Твоё задание</p>
+          <div class="task-box"><p class="task-text">Проведи 1-on-1 разговор с сотрудником об изменении. Используй формулу ЗПДО, определи тип сотрудника и его барьер по ADKAR. Слушай 70% времени, говори 30%. Разговор длится 4 минуты.</p></div>
+        </div>
+        <div class="section">
+          <p class="slabel">Можешь начать разговор с фразы</p>
+          <div class="phrase-box"><p class="phrase-text">«[Имя], хочу поговорить про раздел «риски» в твоих отчётах. Не с критикой, хочу разобраться вместе как это работает.»</p></div>
+        </div>
+
+          <div class="section">
+            <p class="slabel">Контекст изменения</p>
+            <p class="stext">Команда переходит на новый формат еженедельных отчётов: вместо развёрнутого свободного текста будет структурированная форма с тремя разделами (результаты, риски, следующие шаги). Сотрудник уже три недели сдаёт отчёты, но каждый раз раздел «риски» заполняет неправильно, пишет туда задачи вместо рисков. Ты разговариваешь с сотрудником напрямую.</p>
+          </div>
+          <div class="section">
+            <p class="slabel">Факты</p>
+            <div class="fact-box"><p class="fact-text">Риски нужны для принятия решений руководством, они смотрят именно этот раздел. Если там задачи вместо рисков, раздел теряет смысл и решения принимаются без нужной информации.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Что не изменится</p>
+            <div class="stays-box"><p class="stays-text">Нагрузка, дедлайны, состав команды.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Действия и апдейт для команды</p>
+            <div class="action-box"><p class="action-text">Покажи на примере прошлого отчёта: вот риск, вот задача, вот разница. Дай памятку: «риск = то, что может помешать достичь цели». Первую проверку после разъяснений ты планируешь провести через неделю.</p></div>
+          </div>
+          <div class="section">
+            <p class="slabel">Правила роли руководителя</p>
+            <div class="rules-box">
+              <div class="rule-step"><div class="rule-c">1</div><p class="rule-text">Строй разговор по ЗПДО: зачем, что меняется и почему, следующий шаг, ответы на вопросы и дата апдейта</p></div>
+              <div class="rule-step"><div class="rule-c">2</div><p class="rule-text">Слушай реакцию: определи тип и барьер ADKAR</p></div>
+              <div class="rule-step"><div class="rule-c">3</div><p class="rule-text">Покажи личную выгоду для сотрудника</p></div>
+              <div class="rule-step"><div class="rule-c">4</div><p class="rule-text">Удерживай спокойный тон</p></div>
+              <div class="rule-step"><div class="rule-c">5</div><p class="rule-text">Слушай 70% времени, говори 30%</p></div>
+              <div class="rule-step"><div class="rule-c">6</div><p class="rule-text">Задавай открытые вопросы (Что? Как? Почему?)</p></div>
+            </div>
+          </div>
+          <div class="section">
+            <p class="slabel">Критерий успеха</p>
+            <div class="success-box">
+              <p class="success-item">Сотрудник почувствовал, что его услышали</p>
+              <p class="success-item">Барьер ADKAR диагностирован точно</p>
+              <p class="success-item">Разговор построен по ЗПДО</p>
+              <p class="success-item">Сотрудник согласился на следующий шаг</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /allPanels -->
+
+<script>
+var PW = { 1: 'барсук', 2: 'апельсин' };
+var unlocked = [true, false, false];
+
+function rebuildZalRow(ri) {
+  document.getElementById('zalRow').innerHTML =
+    '<div class="zal-row">' +
+    '<button class="zal-btn active" onclick="showZal(' + ri + ',0)">🏠 Зал 1</button>' +
+    '<button class="zal-btn" onclick="showZal(' + ri + ',1)">🏠 Зал 2</button>' +
+    '</div>';
+}
+
+function showRound(ri) {
+  if (!unlocked[ri]) return;
+  document.querySelectorAll('.round-panel').forEach(function(p, i) {
+    p.classList.toggle('visible', i === ri);
+  });
+  document.querySelectorAll('.round-btn').forEach(function(b, i) {
+    b.classList.remove('active');
+    if (i === ri) b.classList.add('active');
+  });
+  rebuildZalRow(ri);
+  // сбрасываем залы — показываем зал 1
+  var rp = document.getElementById('rp' + ri);
+  rp.querySelectorAll('.zal-panel').forEach(function(p, i) {
+    p.classList.toggle('visible', i === 0);
+  });
+}
+
+function tryRound(ri) {
+  if (unlocked[ri]) {
+    showRound(ri);
+  } else {
+    document.querySelectorAll('.round-panel').forEach(function(p, i) {
+      p.classList.toggle('visible', i === ri);
+    });
+    document.querySelectorAll('.round-btn').forEach(function(b, i) {
+      b.classList.remove('active');
+      if (i === ri) b.classList.add('active');
+    });
+    document.getElementById('zalRow').innerHTML = '';
+    // фокус на поле ввода
+    var inp = document.getElementById('inp' + ri);
+    if (inp) setTimeout(function() { inp.focus(); }, 100);
+  }
+}
+
+function showZal(ri, zi) {
+  var rp = document.getElementById('rp' + ri);
+  rp.querySelectorAll('.zal-panel').forEach(function(p, i) {
+    p.classList.toggle('visible', i === zi);
+  });
+  document.querySelectorAll('.zal-btn').forEach(function(b, i) {
+    b.classList.remove('active');
+    if (i === zi) b.classList.add('active');
+  });
+}
+
+function unlock(ri) {
+  var v = document.getElementById('inp' + ri).value.trim().toLowerCase();
+  if (v === PW[ri]) {
+    unlocked[ri] = true;
+    document.getElementById('lock' + ri).style.display = 'none';
+    document.getElementById('cnt' + ri).style.display = 'block';
+    var rb = document.getElementById('rb' + ri);
+    rb.classList.remove('locked');
+    rb.innerHTML = '<span class="rbig">Р' + (ri + 1) + '</span><span class="rsub">Раунд ' + (ri + 1) + '</span>';
+    showRound(ri);
+  } else {
+    var err = document.getElementById('err' + ri);
+    err.style.display = 'block';
+    setTimeout(function() { err.style.display = 'none'; }, 2500);
+  }
+}
+</script>
+</body>
+</html>
